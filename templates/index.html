@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>HealthMate Chatbot</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: auto;
+            padding: 20px;
+        }
+
+        #chat {
+            border: 1px solid #ccc;
+            padding: 10px;
+            height: 400px;
+            overflow-y: auto;
+        }
+
+        #userInput {
+            width: 80%;
+            padding: 10px;
+        }
+
+        #sendBtn {
+            padding: 10px;
+        }
+
+        #language {
+            padding: 5px;
+        }
+    </style>
+</head>
+
+<body>
+    <h2>HealthMate – Your Rural Health Assistant</h2>
+    <label for="language">Select Language:</label>
+    <select id="language">
+        <option value="english">English</option>
+        <option value="hindi">Hindi</option>
+    </select>
+    <div id="chat"></div>
+    <input type="text" id="userInput" placeholder="Type your message here..." />
+    <button id="sendBtn">Send</button>
+    <button onclick="startDictation()">🎙️ Voice Input</button>
+
+    <script>
+        const chat = document.getElementById('chat');
+        const userInput = document.getElementById('userInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const language = document.getElementById('language');
+
+        sendBtn.addEventListener('click', () => {
+            const text = userInput.value.trim();
+            if (text === '') return;
+            addMessage('You', text);
+            fetch('/api/message', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text: text, language: language.value })
+            })
+                .then(res => res.json())
+                .then(data => addMessage('HealthMate', data.response));
+            userInput.value = '';
+        });
+
+        function addMessage(sender, text) {
+            chat.innerHTML += `<p><strong>${sender}:</strong> ${text}</p>`;
+            chat.scrollTop = chat.scrollHeight;
+        }
+
+        function startDictation() {
+            if ('webkitSpeechRecognition' in window) {
+                const recognition = new webkitSpeechRecognition();
+                recognition.lang = language.value === 'hindi' ? 'hi-IN' : 'en-US';
+                recognition.start();
+                recognition.onresult = function (event) {
+                    const transcript = event.results[0][0].transcript;
+                    userInput.value = transcript;
+                };
+            } else {
+                alert("Voice recognition not supported in this browser.");
+            }
+        }
+    </script>
+</body>
+
+</html>
